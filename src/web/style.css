@@ -1,0 +1,1341 @@
+/*
+ * Regesta - stylesheet
+ *
+ * Guiding idea: the application is a reading room, not a shop window. The
+ * document is the only thing that should stand out; everything else steps
+ * back. Sober backgrounds, so that the image of a 16th-century folio does not
+ * have to compete with the interface.
+ */
+
+:root {
+  --ink: #221d17;
+  --ink-soft: #554c40;
+  --ink-faint: #8a7f70;
+  --bg: #f7f4ee;
+  --surface: #fffdf9;
+  --line: #ddd4c6;
+  --line-soft: #e9e2d6;
+  --accent: #7a4a2b;
+  --accent-bg: #f0e4d8;
+  --warning: #96702a;
+  --warning-bg: #f4ead6;
+  --good: #4a6b3f;
+  --radius: 3px;
+  --shadow: 0 1px 3px rgba(34, 29, 23, .08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ece5da;
+    --ink-soft: #b6ab9c;
+    --ink-faint: #8a8074;
+    --bg: #17140f;
+    --surface: #201c16;
+    --line: #3a342a;
+    --line-soft: #2c271f;
+    --accent: #d8a075;
+    --accent-bg: #2e2419;
+    --warning: #d4ab63;
+    --warning-bg: #2c2517;
+    --good: #93b585;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  /* Bar on top and body below taking the rest: each column of the body
+     manages its own scrolling. */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+h1, h2, h3 { font-family: "Spectral", Georgia, serif; font-weight: 600; margin: 0 0 .6rem; }
+h1 { font-size: 1.8rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: .4rem .8rem;
+  border-radius: var(--radius);
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Links take the accent colour from the palette. The browser default blue is
+   illegible over the warm backgrounds of this application, and in dark mode it
+   almost disappears. */
+a { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+a:hover { text-decoration-color: currentColor; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* ---------- Barra superior ---------- */
+
+/* The bar no longer needs sticky: the page does not scroll, the two columns
+   below it scroll independently. */
+.bar {
+  position: relative; z-index: 20; flex: none;
+  display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+  padding: .7rem 1.2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { text-decoration: none; color: var(--ink); }
+.brand-name { font-family: "Spectral", Georgia, serif; font-size: 1.25rem; font-weight: 600; }
+
+.searchbox { display: flex; gap: .4rem; flex: 1; min-width: 240px; max-width: 560px; }
+.searchbox input {
+  flex: 1; font: inherit; padding: .45rem .7rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+
+.sections { display: flex; gap: .3rem; flex-wrap: wrap; }
+.sections button { border-color: transparent; background: transparent; padding: .35rem .7rem; }
+.sections button.active { background: var(--accent-bg); color: var(--accent); border-color: var(--line-soft); }
+
+/* ---------- Contenido ---------- */
+
+/* ---------- Layout with the side browser ---------- */
+
+/* The body takes the remaining height and each column scrolls on its own, so
+   the browser does not drag the document list along when it reaches its
+   end. */
+.body {
+  display: grid;
+  grid-template-columns: var(--panel-width, 268px) 4px 1fr;
+  align-items: stretch;
+  flex: 1; min-height: 0; position: relative;
+}
+.body.no-panel { grid-template-columns: 1fr; }
+.body.no-panel .browser,
+.body.no-panel .br-handle { display: none; }
+
+/* Handle to adjust the panel width. */
+.br-handle {
+  cursor: col-resize; background: transparent;
+  position: relative; z-index: 5;
+}
+.br-handle::after {
+  content: ''; position: absolute; inset: 0 1px;
+  background: transparent; transition: background .12s;
+}
+.br-handle:hover::after, .br-handle.arrastrando::after { background: var(--accent); }
+.br-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Tab that brings the panel back when it is collapsed. */
+.br-expand {
+  display: none;
+  position: absolute; left: 0; top: .6rem; z-index: 15;
+  padding: .45rem .3rem; border-radius: 0 var(--radius) var(--radius) 0;
+  border-left: none; font-size: .9rem; line-height: 1;
+}
+.body.no-panel .br-expand { display: block; }
+
+.br-collapse {
+  flex: none; padding: .55rem .5rem; font-size: .95rem; line-height: 1;
+  color: var(--ink-faint); border-bottom: 2px solid transparent;
+}
+.br-collapse:hover { color: var(--accent); }
+
+/* The bar button is only needed on narrow screens, where the panel overlays
+   the content instead of taking its own column. */
+.narrow-only { display: none; }
+@media (max-width: 900px) { .narrow-only { display: inline-block; } }
+
+.browser {
+  /* min-height:0 is what lets the panel limit itself to the height of the
+     grid instead of stretching with its content. */
+  height: 100%; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: var(--surface); border-right: 1px solid var(--line);
+}
+
+.br-tabs {
+  display: flex; border-bottom: 1px solid var(--line); flex: none;
+}
+.br-tabs button {
+  flex: 1; border: none; background: transparent; border-radius: 0;
+  padding: .55rem .3rem; font-size: .8rem; color: var(--ink-faint);
+  border-bottom: 2px solid transparent;
+}
+.br-tabs button.active {
+  color: var(--accent); border-bottom-color: var(--accent); font-weight: 500;
+}
+.br-tabs button:hover { color: var(--accent); }
+
+.br-body {
+  flex: 1; min-height: 0; overflow-y: auto; padding: .6rem .5rem 2rem;
+  /* On reaching the end of the tree, scrolling stops here instead of
+     spilling over into the document list. */
+  overscroll-behavior: contain;
+}
+
+/* Tree nodes */
+.node-exp {
+  display: flex; align-items: center; gap: .35rem; width: 100%;
+  border: none; background: transparent; border-radius: var(--radius);
+  padding: .28rem .4rem; text-align: left; font-size: .84rem;
+  color: var(--ink-soft); line-height: 1.35;
+}
+.node-exp:hover { background: var(--accent-bg); color: var(--accent); }
+.node-exp.active {
+  background: var(--accent-bg); color: var(--accent); font-weight: 500;
+}
+.node-exp .arrow {
+  width: 14px; flex: none; color: var(--ink-faint); font-size: .7rem;
+  transition: transform .12s;
+}
+.node-exp .arrow.hollow { visibility: hidden; }
+.node-exp.open .arrow { transform: rotate(90deg); }
+.node-exp .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-exp .count {
+  flex: none; font-size: .72rem; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.node-exp.active .count { color: var(--accent); }
+
+.br-branch { margin-left: .75rem; border-left: 1px solid var(--line-soft); padding-left: .2rem; }
+.br-branch[hidden] { display: none; }
+
+.br-title {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-faint); margin: .8rem 0 .3rem .4rem;
+}
+.br-title:first-child { margin-top: .2rem; }
+
+.br-empty { font-size: .8rem; color: var(--ink-faint); padding: .6rem .4rem; line-height: 1.5; }
+
+/* Etiquetas */
+.br-new { display: flex; gap: .3rem; padding: .5rem .4rem; }
+.br-new input {
+  flex: 1; min-width: 0; font: inherit; font-size: .8rem; padding: .25rem .45rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.br-new button { padding: .2rem .5rem; font-size: .8rem; }
+
+.tag-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+}
+
+/* Tag row with its delete button, which only appears on hover so the panel
+   is not littered with crosses. */
+.tag-row { display: flex; align-items: center; }
+.tag-row .node-exp { flex: 1; min-width: 0; }
+.remove-tag {
+  flex: none; border: none; background: transparent; color: var(--ink-faint);
+  padding: .2rem .35rem; font-size: .75rem; line-height: 1;
+  opacity: 0; transition: opacity .12s;
+}
+.tag-row:hover .remove-tag, .remove-tag:focus-visible { opacity: 1; }
+.remove-tag:hover { color: var(--warning); }
+
+.doc-tags { display: flex; gap: .25rem; flex-wrap: wrap; margin-top: .3rem; }
+.tag-chip {
+  font-size: .65rem; padding: .08rem .3rem; border-radius: 2px;
+  background: var(--accent-bg); color: var(--accent);
+}
+
+/* Tags in the viewer record: click to add and to remove. */
+.record-tags { margin-top: 1.1rem; padding-top: .8rem; border-top: 1px solid var(--line-soft); }
+.record-lbl-title {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-faint); margin: 0 0 .45rem;
+}
+.record-lbl-lista { display: flex; flex-wrap: wrap; gap: .3rem; }
+.tag-button {
+  font-size: .76rem; padding: .2rem .5rem;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: transparent; color: var(--ink-faint);
+}
+.tag-button.puesta {
+  background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
+  font-weight: 500;
+}
+.record-lbl-vacio { font-size: .8rem; color: var(--ink-faint); margin: 0; line-height: 1.5; }
+
+/* ---------- Description record ---------- */
+
+.record-pestanas {
+  display: flex; gap: .2rem; margin: -.3rem -.3rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.record-pestanas button {
+  border: none; background: transparent; border-radius: 0;
+  padding: .45rem .7rem; font-size: .82rem; color: var(--ink-faint);
+  border-bottom: 2px solid transparent;
+}
+.record-pestanas button.active {
+  color: var(--accent); border-bottom-color: var(--accent); font-weight: 500;
+}
+.described-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--good); vertical-align: middle; margin-left: .1rem;
+}
+
+.record-form { display: flex; flex-direction: column; gap: .7rem; }
+
+.field { display: block; }
+.field > span {
+  display: block; font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-faint); margin-bottom: .25rem;
+}
+.field input, .field textarea, .field select {
+  width: 100%; font: inherit; font-size: .86rem;
+  padding: .35rem .5rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.field textarea { resize: vertical; line-height: 1.5; min-height: 2.2rem; }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent); outline: none;
+}
+
+.advanced-field summary {
+  cursor: pointer; font-size: .78rem; color: var(--ink-soft);
+  padding: .25rem 0; user-select: none;
+}
+.advanced-field[open] summary { margin-bottom: .5rem; }
+.advanced-field .field { margin-bottom: .6rem; }
+
+.form-status {
+  margin: 0; min-height: 1.1em; font-size: .75rem; color: var(--ink-faint);
+}
+.form-status.ok { color: var(--good); }
+.form-status.error { color: var(--warning); }
+
+/* A dot on the card marks what has already been described by hand. */
+.doc.descrito .doc-foot::before,
+.doc[data-descrito="1"] .doc-foot::before {
+  content: ''; float: right; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--good); margin: .35rem 0 0 .3rem;
+}
+
+.tag-new { border-style: dashed; padding-inline: .45rem; font-weight: 600; }
+.tag-new:hover { border-style: solid; }
+
+.record-lbl-nueva { display: flex; gap: .3rem; margin-top: .5rem; }
+.record-lbl-nueva[hidden] { display: none; }
+.record-lbl-nueva input {
+  flex: 1; min-width: 0; font: inherit; font-size: .8rem; padding: .25rem .45rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.record-lbl-nueva button { font-size: .78rem; padding: .25rem .5rem; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; }
+  .browser, .br-handle, .br-expand { display: none; }
+  .body.no-panel .br-expand { display: none; }
+  .body.with-mobile-panel .browser {
+    display: flex; position: absolute; inset: 0 auto 0 0;
+    width: 270px; z-index: 30; box-shadow: 4px 0 18px rgba(34,29,23,.2);
+  }
+  .body { position: relative; }
+}
+
+/* With the browser alongside, the content fills the remaining gap instead of
+   centring: centring would leave a dead margin on the right. */
+main {
+  padding: 1.5rem 1.4rem 4rem; min-width: 0;
+  height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+}
+.body.no-panel main { max-width: none; }
+.body.no-panel main > * { max-width: 1500px; margin-inline: auto; }
+.loading { color: var(--ink-faint); }
+
+/* ---------- Indicador de watching ---------- */
+
+.watching {
+  display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+  margin: 0 0 1.2rem; padding: .5rem .8rem;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: .85rem; color: var(--ink-soft);
+}
+.watching .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--good); flex: none;
+}
+.watching.working .dot { background: var(--warning); }
+.watching button { margin-left: auto; font-size: .82rem; padding: .25rem .6rem; }
+.watching.apagada { color: var(--ink-faint); }
+.watching code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .95em; color: var(--accent);
+}
+
+/* ---------- Gramps tree ---------- */
+
+.gramps-panel {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.2rem;
+}
+.gramps-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin: 0 0 .4rem; font-size: .8rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-faint);
+}
+.gramps-mini { font-size: .75rem; padding: .2rem .5rem; text-transform: none; letter-spacing: 0; }
+.gramps-nota { margin: 0 0 .7rem; font-size: .87rem; color: var(--ink-soft); max-width: 68ch; }
+.gramps-cifras { margin: 0; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.gramps-pista { margin: .4rem 0 0; font-size: .76rem; color: var(--ink-faint); }
+.gramps-pista code, .gramps-nota code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .95em; color: var(--accent);
+}
+.gramps-error { margin: .4rem 0 0; font-size: .8rem; color: var(--warning); min-height: 1em; }
+.gramps-pista a { color: var(--accent); }
+
+.gramps-form { display: flex; gap: .4rem; flex-wrap: wrap; }
+.gramps-form input, .gramps-form select {
+  flex: 1; min-width: 260px; font: inherit; font-size: .85rem; padding: .3rem .5rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.gramps-form[hidden] { display: none; }
+.gramps-cifras code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .95em; color: var(--accent);
+}
+
+/* Gramps section inside the document record */
+.gramps-none { margin: .2rem 0 0; font-size: .8rem; color: var(--ink-faint); line-height: 1.5; }
+.gramps-search { position: relative; }
+.gramps-search input {
+  width: 100%; font: inherit; font-size: .85rem; padding: .3rem .5rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.gramps-results { display: flex; flex-direction: column; gap: .15rem; margin-top: .3rem; }
+.gramps-op {
+  display: flex; justify-content: space-between; gap: .5rem; align-items: baseline;
+  text-align: left; font-size: .82rem; padding: .3rem .45rem;
+  border: 1px solid var(--line-soft); background: var(--bg);
+}
+.gramps-op:hover { border-color: var(--accent); }
+.gramps-op code { font-size: .75rem; color: var(--ink-faint); }
+.go-name { flex: 1; min-width: 0; }
+.go-data { display: flex; gap: .35rem; align-items: baseline; flex: none; }
+/* The years tell namesakes apart, which within a family are the rule. */
+.go-fechas { font-size: .72rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.gp-fechas {
+  font-size: .76rem; color: var(--ink-soft); flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Documents already linked to the same person. */
+.gp-docs { margin-bottom: .7rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line-soft); }
+.gp-docs-title {
+  margin: 0 0 .35rem; font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--ink-faint);
+}
+.gp-docs-lista { display: flex; gap: .3rem; overflow-x: auto; padding-bottom: .2rem; }
+.gp-doc {
+  flex: none; width: 66px; padding: 0; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); display: flex; flex-direction: column;
+}
+.gp-doc:hover { border-color: var(--accent); }
+.gp-doc.current { border-color: var(--accent); background: var(--accent-bg); }
+.gp-doc img { width: 100%; height: 52px; object-fit: cover; display: block; }
+.gp-doc-ext {
+  height: 52px; display: flex; align-items: center; justify-content: center;
+  font-family: "IBM Plex Mono", monospace; font-size: .7rem; color: var(--ink-faint);
+  background: var(--bg);
+}
+.gp-doc-txt {
+  padding: .2rem .25rem; font-size: .64rem; line-height: 1.3;
+  display: flex; flex-direction: column; text-align: left;
+}
+.gp-doc-type { color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-doc-year { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.gp-doc-here {
+  font-size: .6rem; color: var(--accent); padding: 0 .25rem .2rem; text-align: left;
+}
+
+/* Viewer back button. */
+.viewer-back {
+  flex: none; padding: .25rem .5rem; font-size: 1rem; line-height: 1;
+  margin-right: .5rem;
+}
+.viewer-back[hidden] { display: none; }
+
+.gramps-person {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); padding: .6rem .7rem;
+}
+.gp-cabecera { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.gp-cabecera strong { flex: 1; font-size: .9rem; }
+.gp-cabecera code {
+  font-family: "IBM Plex Mono", monospace; font-size: .72rem; color: var(--accent);
+  background: var(--accent-bg); padding: .05rem .3rem; border-radius: 2px;
+}
+.gp-remove {
+  border: none; background: transparent; color: var(--ink-faint);
+  padding: .1rem .3rem; font-size: .75rem;
+}
+.gp-remove:hover { color: var(--warning); }
+
+.gramps-eventos { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.gramps-evento {
+  font-size: .8rem; line-height: 1.5;
+  padding-left: .6rem; border-left: 2px solid var(--line);
+}
+.gramps-evento strong { font-size: .84rem; }
+.ge-fecha { color: var(--ink-faint); margin-left: .4rem; font-variant-numeric: tabular-nums; }
+.ge-lugar { color: var(--ink-soft); }
+.ge-gente { color: var(--ink-soft); font-size: .76rem; margin-top: .15rem; }
+.ge-papel { color: var(--ink-faint); font-size: .7rem; }
+.ge-nota {
+  margin-top: .25rem; font-size: .76rem; color: var(--ink-soft);
+  background: var(--surface); padding: .3rem .4rem; border-radius: 2px;
+}
+.ge-cita { margin-top: .2rem; font-size: .74rem; color: var(--ink-faint); }
+
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; margin-bottom: 2rem; }
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1rem; }
+.figure .n { font-size: 1.7rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.figure .et { font-size: .78rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; }
+.figure.warns .n { color: var(--warning); }
+
+/* ---------- Rejilla de documentos ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: .9rem;
+  /* The preview sticks out of its cell: the grid must not clip it. */
+  overflow: visible;
+}
+
+.doc {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  text-align: left; padding: 0;
+  /* No overflow:hidden -- it would clip the preview. The crop is applied
+     to the thumbnail, which is the only thing that needs it. */
+}
+.doc:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+/* The highlighted card sits above its neighbours, so its preview is not
+   covered by the next row. */
+.doc:hover, .doc:focus-visible { z-index: 10; }
+
+.doc-img {
+  aspect-ratio: 3 / 4;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.doc-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Formats with no thumbnail show their extension over a sober background, so
+   they can be told apart in the grid without opening them. */
+.no-img {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line-soft);
+}
+.no-img-ext {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 1.05rem; letter-spacing: .08em; color: var(--ink-faint);
+}
+.no-img-pdf { background: linear-gradient(160deg, var(--bg), var(--accent-bg)); }
+.no-img-pdf .no-img-ext { color: var(--accent); }
+.no-img-text .no-img-ext, .no-img-word .no-img-ext { color: var(--ink-soft); }
+
+.doc-foot { padding: .55rem .65rem; border-top: 1px solid var(--line-soft); }
+.doc-person {
+  font-size: .85rem; font-weight: 500; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.doc-meta {
+  display: flex; gap: .4rem; align-items: baseline; flex-wrap: wrap;
+  font-size: .75rem; color: var(--ink-faint); margin-top: .2rem;
+}
+.doc-type { text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; }
+.doc-year { font-variant-numeric: tabular-nums; }
+
+.tag {
+  display: inline-block; font-size: .68rem; padding: .1rem .35rem;
+  border-radius: 2px; background: var(--warning-bg); color: var(--warning);
+}
+
+/* A value the system has read but does not believe: shown struck through so
+   nobody takes it as good without checking it. */
+.doubtful-value { text-decoration: line-through; opacity: .65; }
+
+.pagination { display: flex; gap: .6rem; align-items: center; justify-content: center; margin-top: 1.8rem; }
+.search-summary { color: var(--ink-soft); margin: 0; font-size: .92rem; }
+
+.results-bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.list-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.per-page { display: flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--ink-faint); }
+.per-page select {
+  font: inherit; font-size: .85rem; padding: .2rem 1.4rem .2rem .45rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink); cursor: pointer;
+}
+
+/* ---------- Preview on hover ---------- */
+
+.preview {
+  position: absolute; left: 50%; bottom: calc(100% + 8px); z-index: 30;
+  transform: translateX(-50%);
+  width: max-content; max-width: 290px;
+  display: none; flex-direction: column; gap: .18rem;
+  padding: .65rem .8rem;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(34, 29, 23, .18);
+  font-size: .8rem; line-height: 1.45; text-align: left;
+  pointer-events: none;   /* no debe interponerse al hacer clic */
+  white-space: normal;
+}
+.doc { position: relative; }
+/* Pointer devices only: on a touch screen there is no hover and the panel
+   would stay stuck after the first tap. */
+@media (hover: hover) and (pointer: fine) {
+  .doc:hover .preview,
+  .doc:focus-visible .preview { display: flex; }
+}
+
+.preview strong { font-weight: 600; line-height: 1.35; }
+.pv-spouse { color: var(--ink-soft); }
+.pv-record { color: var(--ink-soft); }
+.pv-series { color: var(--ink-faint); font-size: .76rem; }
+.pv-technical { color: var(--ink-faint); font-size: .74rem; font-variant-numeric: tabular-nums; }
+.pv-warning { color: var(--warning); font-size: .76rem; }
+/* Content teaser, for documents that have no thumbnail. */
+.pv-taste {
+  margin-top: .4rem; padding: .45rem .55rem;
+  background: var(--bg); border-radius: 2px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .72rem; line-height: 1.55; color: var(--ink-soft);
+  white-space: pre-wrap;
+  max-height: 8.5em; overflow: hidden;
+}
+
+/* Fragment of the document where what was searched for appears. */
+.pv-match { border-left: 2px solid var(--accent); }
+.pv-match mark {
+  background: var(--accent-bg); color: var(--accent);
+  font-weight: 600; padding: 0 .1rem; border-radius: 2px;
+}
+
+.pv-file {
+  color: var(--ink-faint); font-size: .72rem; word-break: break-all;
+  margin-top: .25rem; padding-top: .25rem; border-top: 1px solid var(--line-soft);
+}
+
+/* Near the top edge of the window the preview opens downwards, so it does not
+   run off screen. The script sets the class, because it knows where the card
+   is; the number of columns changes with the width and cannot be worked out in
+   CSS. */
+.doc.previa-abajo .preview {
+  bottom: auto; top: calc(100% + 8px);
+}
+
+/* Near the side edges the preview aligns with the card instead of
+   centring, so it does not run off the window. */
+.doc.previa-izq .preview { left: 0; transform: none; }
+.doc.previa-der .preview { left: auto; right: 0; transform: none; }
+
+/* ---------- Lagunas documentales ---------- */
+
+.coverage-bar {
+  height: 8px; background: var(--line-soft); border-radius: 4px;
+  overflow: hidden; max-width: 620px;
+}
+.bc-fill { height: 100%; background: var(--good); border-radius: 4px; }
+
+.row-laguna { grid-template-columns: 110px 1fr auto; }
+.row-laguna[hidden] { display: none; }
+.gap-record {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--accent); background: var(--accent-bg);
+  padding: .2rem .4rem; border-radius: 2px; text-align: center;
+}
+.gap-person { font-size: .92rem; font-weight: 500; }
+.gap-citations { color: var(--warning); }
+
+/* ---------- Quick review ---------- */
+
+.review { max-width: 1100px; margin: 0 auto; }
+.rev-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+  font-size: .85rem; color: var(--ink-faint);
+}
+.rev-confidence { font-variant-numeric: tabular-nums; }
+.rev-batch { font-size: .8rem; padding: .25rem .6rem; }
+
+.rev-body { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start; }
+
+.rev-image {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); padding: 0; overflow: hidden;
+  display: block; width: 100%; cursor: zoom-in;
+}
+.rev-image img { display: block; width: 100%; height: auto; max-height: 68vh; object-fit: contain; }
+.rev-image .no-img { aspect-ratio: 3/4; }
+
+.rev-record {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.1rem 1.2rem;
+}
+.rev-file { margin: 0 0 .15rem; font-size: .88rem; font-weight: 500; word-break: break-word; }
+.rev-path { margin: 0 0 1rem; font-size: .76rem; color: var(--ink-faint); }
+
+.rev-data { display: grid; grid-template-columns: 80px 1fr; gap: .4rem .8rem; margin: 0 0 1rem; font-size: .9rem; }
+.rev-data dt { color: var(--ink-faint); font-size: .82rem; }
+.rev-data dd { margin: 0; word-break: break-word; }
+
+.rev-warnings { margin: 0 0 1rem; }
+
+.rev-actions { display: flex; flex-direction: column; gap: .4rem; }
+.rev-actions button {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: .6rem; padding: .5rem .8rem; font-size: .9rem;
+}
+.rev-actions .rev-yes {
+  background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
+  font-weight: 500;
+}
+.rev-actions kbd {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .7rem;
+  padding: .1rem .3rem; border: 1px solid var(--line); border-radius: 2px;
+  color: var(--ink-faint); background: var(--bg);
+}
+.rev-help { margin: .8rem 0 0; font-size: .75rem; color: var(--ink-faint); }
+.rev-help kbd {
+  font-family: "IBM Plex Mono", monospace; font-size: .7rem;
+  padding: .05rem .25rem; border: 1px solid var(--line); border-radius: 2px;
+}
+
+.rev-batch kbd {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .68rem;
+  padding: 0 .25rem; border: 1px solid var(--line); border-radius: 2px;
+}
+.rev-recent { max-width: 820px; }
+.rec-list { list-style: none; margin: 1rem 0; padding: 0; }
+.rec-row {
+  display: flex; align-items: center; gap: .5rem; padding: .6rem 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.rec-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.rec-meta { font-size: .76rem; color: var(--ink-faint); word-break: break-word; }
+
+.review-end { max-width: 520px; margin: 3rem auto; text-align: center; }
+.review-end button { margin-top: .5rem; }
+
+/* ---------- Matching against the tree: each person's candidates ---------- */
+
+.sug-person { margin: 0 0 1rem; }
+/* The name as read from the document, which is the starting point. */
+.sug-read {
+  margin: 0 0 .4rem; font-size: .9rem; font-weight: 500;
+  padding-bottom: .3rem; border-bottom: 1px solid var(--line-soft);
+}
+.sug-empty { margin: 0; font-size: .8rem; color: var(--ink-faint); font-style: italic; }
+
+.sug-options { display: flex; flex-direction: column; gap: .35rem; }
+.sug-option {
+  display: grid; grid-template-columns: auto 1fr auto; gap: .2rem .5rem;
+  align-items: center; cursor: pointer;
+  border: 1px solid var(--line-soft); border-left: 3px solid var(--line);
+  border-radius: var(--radius); padding: .45rem .6rem; font-size: .86rem;
+}
+.sug-option:hover { border-color: var(--accent); }
+.sug-option.elegida { background: var(--accent-bg); border-left-color: var(--accent); }
+.sug-name { font-weight: 500; }
+/* Why it is proposed: without this the user cannot judge the suggestion, only
+   obey it. It spans the full row, under the name. */
+.sug-reason {
+  grid-column: 2 / -1; font-size: .74rem; color: var(--ink-faint); line-height: 1.35;
+}
+.sug-option .tag.cert-probable,
+.sug-option .tag.cert-uncertain { background: var(--warning-bg); color: var(--warning); }
+.sug-option .tag.cert-certain { background: var(--accent-bg); color: var(--accent); }
+
+.sug-none {
+  display: flex; align-items: center; gap: .4rem; cursor: pointer;
+  margin-top: .35rem; font-size: .78rem; color: var(--ink-faint);
+}
+
+@media (max-width: 900px) {
+  .rev-body { grid-template-columns: 1fr; }
+  .rev-image img { max-height: 45vh; }
+}
+
+/* ---------- Classification scheme ---------- */
+
+.tree { list-style: none; padding-left: 0; margin: 0; }
+.tree ul { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px solid var(--line-soft); }
+.tree li { padding: .12rem 0; }
+.node {
+  display: flex; gap: .5rem; align-items: baseline; width: 100%;
+  border: none; background: transparent; padding: .25rem .4rem; border-radius: var(--radius);
+}
+.node:hover { background: var(--accent-bg); }
+.node .nivel {
+  font-size: .64rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-faint); flex: none; min-width: 58px;
+}
+.node .count { color: var(--ink-faint); font-size: .8rem; font-variant-numeric: tabular-nums; }
+
+/* ---------- Review and duplicate lists ---------- */
+
+.list { display: grid; gap: .6rem; }
+.row {
+  display: grid; grid-template-columns: 64px 1fr auto; gap: .9rem; align-items: center;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: .6rem .8rem;
+}
+.row img { width: 64px; height: 64px; object-fit: cover; border-radius: 2px; background: var(--bg); }
+.row .path { font-size: .78rem; color: var(--ink-faint); word-break: break-all; }
+.dup-group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: .8rem; }
+.dup-group h3 { font-size: .95rem; margin-bottom: .5rem; }
+
+/* ---------- Visor ---------- */
+
+.viewer {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; grid-template-rows: auto 1fr; grid-template-columns: 1fr var(--sheet-width, 330px);
+  grid-template-areas: "bar bar" "canvas record";
+  background: var(--bg);
+}
+.viewer.with-adjustments { grid-template-columns: 1fr 236px var(--sheet-width, 330px); }
+.viewer[hidden] { display: none; }
+
+.viewer-bar {
+  grid-area: bar;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .55rem 1rem; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.viewer-title {
+  flex: 1; min-width: 0;
+  font-weight: 500; font-size: .92rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* It wraps instead of overflowing: with a narrow viewer the last buttons --
+   among them the one for marking an entry -- fell outside the window and
+   there was no way to press them. */
+.viewer-actions {
+  display: flex; gap: .35rem; align-items: center;
+  flex-wrap: wrap; justify-content: flex-end; min-width: 0;
+}
+.viewer-actions span { font-size: .8rem; color: var(--ink-faint); min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.viewer-canvas {
+  grid-area: canvas; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); padding: 1rem;
+  /* Dragging moves it: the cursor announces it before it is touched. */
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.viewer-canvas.arrastrando { cursor: grabbing; }
+/* The frame wraps the image and its crops, so they transform together. */
+.image-frame {
+  position: relative; display: inline-block;
+  transform-origin: center center; will-change: transform;
+}
+.image-frame.recortando { cursor: crosshair; }
+
+.viewer-canvas img {
+  display: block;
+  box-shadow: var(--shadow); background: white;
+  -webkit-user-drag: none;
+}
+
+/* ---------- Entries marked within the folio ---------- */
+
+.crop-layer { position: absolute; inset: 0; pointer-events: none; }
+
+.crop {
+  position: absolute; pointer-events: auto;
+  border: 2px solid var(--accent); border-radius: 2px;
+  background: rgba(122, 74, 43, .08);
+}
+.crop.provisional { border-style: dashed; background: rgba(122, 74, 43, .14); }
+
+/* Action bar of the crop. It sits over the box at its own size: the previous
+   tag inherited the folio's scale and ended up a ten-pixel strip with a
+   seven-pixel cross, impossible to see and to hit. */
+.crop-tag {
+  position: absolute; bottom: 100%; left: -2px; margin-bottom: 3px;
+  display: flex; align-items: stretch; gap: 1px;
+  white-space: nowrap;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow);
+  /* Above the button covering the rectangle, or they could not be pressed. */
+  z-index: 1;
+  /* Undoes the zoom scale: the bar follows the crop, but reads just as
+     well at 30 % as at 300 %. */
+  transform: scale(var(--counter-zoom, 1));
+  transform-origin: bottom left;
+}
+
+/* A crop against the top edge would leave the bar outside the image, with no
+   way to press it: in that case it moves inside the box. */
+.crop.arriba .crop-tag {
+  bottom: auto; top: 3px; left: 3px; margin-bottom: 0;
+  transform-origin: top left;
+}
+
+.crop-remove {
+  border: none; background: var(--accent); color: var(--surface);
+  padding: .3rem .55rem; font-size: .72rem; line-height: 1.2;
+  display: inline-flex; align-items: center; gap: .3rem;
+}
+.crop-remove:hover { background: var(--ink); color: var(--surface); }
+.crop-remove:focus-visible { outline: 2px solid var(--surface); outline-offset: -3px; }
+
+#viewer-crop[aria-pressed="true"] {
+  background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
+}
+
+/* ---------- Panel de adjustments de imagen ---------- */
+
+/* The panel takes its own column instead of floating over the document: the
+   image is adjusted while being looked at, and covering it would be absurd. */
+.adjustments {
+  grid-area: adjustments; overflow-y: auto;
+  width: 236px; padding: .9rem 1rem 1rem;
+  background: var(--surface); border-left: 1px solid var(--line);
+}
+.adjustments[hidden] { display: none; }
+
+.viewer.with-adjustments {
+  grid-template-columns: 1fr 236px var(--sheet-width, 330px);
+  grid-template-areas: "bar bar bar" "canvas adjustments record";
+}
+
+.adjustments-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; }
+.adjustments-head button { border: none; background: transparent; padding: .1rem .3rem; }
+
+.control { display: block; margin-bottom: .7rem; }
+.control span {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: .8rem; color: var(--ink-soft); margin-bottom: .25rem;
+}
+.control output { font-variant-numeric: tabular-nums; color: var(--ink-faint); font-size: .76rem; }
+.control input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+
+.adjustments-group { display: flex; gap: .4rem; margin-bottom: .5rem; }
+.adjustments-group button { flex: 1; padding: .35rem .3rem; font-size: .84rem; }
+.adjustments-group button[aria-pressed="true"] {
+  background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
+}
+.wide { width: 100%; margin-top: .3rem; }
+
+.adjustments-note {
+  margin: .8rem 0 0; font-size: .74rem; color: var(--ink-faint); line-height: 1.45;
+}
+
+#viewer-lens[aria-pressed="true"], #viewer-panel[aria-pressed="true"] {
+  background: var(--accent-bg); color: var(--accent); border-color: var(--accent);
+}
+
+/* ---------- Viewers by format ---------- */
+
+/* All the viewers share the canvas area: only one is visible at a time. */
+.viewer-pdf, .viewer-text, .viewer-other, .viewer-word {
+  grid-area: canvas; overflow-y: auto;
+  background: var(--bg);
+}
+.viewer-pdf[hidden], .viewer-text[hidden],
+.viewer-other[hidden], .viewer-word[hidden] { display: none; }
+
+.viewer-pdf { cursor: grab; }
+.viewer-pdf.arrastrando { cursor: grabbing; }
+/* While dragging, the page text must not get selected. */
+.viewer-pdf.arrastrando .pdf-sheets { user-select: none; }
+
+.pdf-sheets {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  padding: 1rem;
+}
+.pdf-sheet {
+  position: relative;
+  box-shadow: var(--shadow); background: white;
+  max-width: 100%;
+}
+.pdf-sheet canvas { display: block; max-width: 100%; height: auto; }
+.pdf-number {
+  position: absolute; top: .4rem; right: .5rem;
+  font-size: .7rem; color: var(--ink-faint);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 2px; padding: .05rem .35rem;
+  font-variant-numeric: tabular-nums;
+}
+.pdf-loading { color: var(--ink-faint); padding: 2rem; text-align: center; }
+
+.viewer-text { padding: 1.6rem 1.2rem 3rem; }
+#text-body {
+  max-width: 68ch; margin: 0 auto;
+  font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: .88rem; line-height: 1.75;
+  white-space: pre-wrap; word-break: break-word;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+}
+.truncated-text {
+  max-width: 68ch; margin: .8rem auto 0;
+  font-size: .82rem; color: var(--warning);
+}
+
+.viewer-other { display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.other-box {
+  text-align: center; max-width: 380px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 2rem 1.6rem;
+}
+.other-icon {
+  font-family: "IBM Plex Mono", monospace; font-size: 1.5rem; letter-spacing: .08em;
+  color: var(--accent); margin: 0 0 .8rem;
+}
+.other-box p { margin: 0 0 .5rem; }
+.other-note { color: var(--ink-faint); font-size: .88rem; }
+
+/* ---------- Word convertido ---------- */
+
+.viewer-word { padding: 1.6rem 1.2rem 3rem; }
+#word-body {
+  max-width: 76ch; margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 2.2rem 2.6rem;
+  font-size: .94rem; line-height: 1.7;
+}
+#word-body h1, #word-body h2, #word-body h3 { margin: 1.4rem 0 .5rem; }
+#word-body h1:first-child, #word-body h2:first-child { margin-top: 0; }
+#word-body p { margin: 0 0 .75rem; }
+#word-body ul, #word-body ol { margin: 0 0 .9rem; padding-left: 1.4rem; }
+#word-body li { margin-bottom: .25rem; }
+#word-body table {
+  width: 100%; border-collapse: collapse; margin: 0 0 1rem; font-size: .88rem;
+}
+#word-body th, #word-body td {
+  border: 1px solid var(--line); padding: .35rem .6rem; text-align: left;
+}
+#word-body th { background: var(--bg); font-weight: 600; }
+#word-body img { max-width: 100%; height: auto; margin: .5rem 0; }
+#word-body blockquote {
+  margin: 0 0 .9rem; padding-left: .9rem;
+  border-left: 2px solid var(--line); color: var(--ink-soft);
+}
+.word-warning { max-width: 76ch; margin: .8rem auto 0; font-size: .8rem; color: var(--ink-faint); }
+
+/* ---------- Search inside the document ---------- */
+
+.doc-finder {
+  position: absolute; top: 3.3rem; right: 1rem; z-index: 40;
+  display: flex; align-items: center; gap: .3rem;
+  padding: .4rem .5rem;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: 0 4px 16px rgba(34, 29, 23, .16);
+}
+.doc-finder[hidden] { display: none; }
+.doc-finder input {
+  font: inherit; font-size: .85rem; width: 190px;
+  padding: .25rem .5rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+.doc-finder button {
+  padding: .2rem .45rem; font-size: .85rem; line-height: 1.2;
+}
+.df-count {
+  font-size: .75rem; color: var(--ink-faint);
+  min-width: 52px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.df-count.no-results { color: var(--warning); }
+
+/* Matches inside the text and the converted Word. */
+#text-body mark, #word-body mark {
+  background: var(--warning-bg); color: var(--ink);
+  padding: 0 .05em; border-radius: 2px;
+}
+#text-body mark.active, #word-body mark.active {
+  background: var(--accent); color: var(--surface);
+}
+
+/* Matches over a PDF page: drawn on top of the canvas. */
+.pdf-mark {
+  position: absolute; pointer-events: none;
+  background: var(--warning); opacity: .3; border-radius: 1px;
+}
+.pdf-mark.active { background: var(--accent); opacity: .45; }
+
+/* The controls of each viewer only appear where they are of use. */
+.viewer:not(.es-imagen) .image-only { display: none; }
+.viewer:not(.es-text) .text-only { display: none; }
+.viewer:not(.es-pdf) .pages-only,
+.viewer:not(.es-pdf) .pdf-only { display: none; }
+#pdf-zoom {
+  font-size: .8rem; color: var(--ink-faint);
+  min-width: 68px; text-align: center; font-variant-numeric: tabular-nums;
+}
+
+/* Handle on the sheet's left edge: widens or narrows the panel and the canvas
+   adapts by itself, because its column is the remaining fraction. */
+.viewer-handle {
+  position: absolute; top: 3.5rem; bottom: 0; right: var(--sheet-width, 330px);
+  width: 9px; transform: translateX(50%); z-index: 8; cursor: col-resize;
+  touch-action: none;
+}
+.viewer-handle:hover, .viewer-handle.arrastrando, .viewer-handle:focus-visible {
+  background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 6px, transparent 6px);
+  outline: none;
+}
+.viewer[hidden] .viewer-handle { display: none; }
+
+.viewer-record {
+  grid-area: record; overflow-y: auto; overscroll-behavior: contain; padding: 1.1rem;
+  background: var(--surface); border-left: 1px solid var(--line);
+}
+.viewer-record dl { margin: 0; display: grid; grid-template-columns: 90px 1fr; gap: .35rem .7rem; font-size: .88rem; }
+.viewer-record dt { color: var(--ink-faint); }
+.viewer-record dd { margin: 0; word-break: break-word; }
+.viewer-record .breadcrumbs { font-size: .8rem; color: var(--ink-faint); margin-bottom: .9rem; line-height: 1.5; }
+.original-link { color: var(--ink); font-weight: 500; }
+
+/* ---------- Classification scheme ---------- */
+
+/* Two columns: the tree on the left and the ISAD(G) record of the selection
+   on the right. Describing a series while seeing where it fits in the whole is
+   faster than going back and forth between two screens. */
+.scheme-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+
+.scheme-two {
+  display: grid; grid-template-columns: 1fr 340px; gap: 1.6rem;
+  align-items: start; margin-top: 1.2rem;
+}
+
+.scheme-tree { min-width: 0; }
+
+.scheme-record {
+  position: sticky; top: 1rem;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1rem;
+  max-height: calc(100vh - 6rem); overflow-y: auto;
+}
+.scheme-record:empty { display: none; }
+.scheme-two:has(.scheme-record:empty) { grid-template-columns: 1fr; }
+.scheme-close {
+  float: right; border: none; background: transparent; cursor: pointer;
+  color: var(--ink-faint); font-size: 1rem; padding: .1rem .3rem;
+}
+.scheme-close:hover { color: var(--ink); }
+
+.scheme-row { display: flex; align-items: center; gap: .1rem; border-radius: var(--radius); }
+.scheme-row.elegida { background: var(--accent-bg); }
+.scheme-row.elegida .node { color: var(--accent); }
+
+.scheme-caret {
+  flex: none; width: 22px; min-height: 26px; padding: .2rem 0;
+  border: none; background: transparent; color: var(--ink-faint); font-size: .8rem;
+}
+.scheme-caret:hover { color: var(--accent); }
+/* With no children there is nothing to collapse, but the space is kept so
+   that titles at the same level stay aligned. */
+.scheme-caret.vacio { pointer-events: none; }
+
+.scheme-ref {
+  font-size: .72rem; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; flex: none;
+}
+
+.scheme-actions {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--line-soft);
+}
+
+.minor-button { font-size: .8rem; padding: .35rem .6rem; }
+.minor-button.peligro { color: var(--accent); }
+
+/* Two short fields that read together (start and end date, date and folio)
+   share a row: separating them would scatter the view and gain nothing. */
+.field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+
+/* ---------- Description of an entry ---------- */
+
+.entry {
+  grid-area: entry; overflow-y: auto;
+  width: 300px; padding: .9rem 1rem 1.2rem;
+  background: var(--surface); border-left: 1px solid var(--line);
+}
+.entry[hidden] { display: none; }
+
+.viewer.with-entry {
+  grid-template-columns: 1fr 300px var(--sheet-width, 330px);
+  grid-template-areas: "bar bar bar" "canvas entry record";
+}
+/* With both panels open the entry one wins: it is opened deliberately over a
+   particular crop, whereas the adjustments can wait. */
+.viewer.with-adjustments.with-entry {
+  grid-template-columns: 1fr 300px var(--sheet-width, 330px);
+  grid-template-areas: "bar bar bar" "canvas entry record";
+}
+.viewer.with-adjustments.with-entry .adjustments { display: none; }
+
+/* Removing the entry from its own panel too: once described, the box may
+   have scrolled out of sight, and the panel is where one looks for the
+   button. */
+.entry-foot {
+  margin-top: 1.2rem; padding-top: .9rem;
+  border-top: 1px solid var(--line-soft);
+}
+.entry-foot button { width: 100%; }
+
+.entry-people { margin-top: 1.2rem; padding-top: .9rem; border-top: 1px solid var(--line-soft); }
+.entry-people h4 {
+  margin: 0 0 .6rem; font-size: .7rem; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-faint); font-weight: 600;
+}
+
+.link {
+  border: 1px solid var(--line-soft); border-left: 3px solid var(--line);
+  border-radius: var(--radius); padding: .5rem .6rem; margin-bottom: .5rem;
+}
+/* The probable and the uncertain look different from the rest: an
+   unconfirmed attribution must not read like a fact from the document. */
+.link.certainty-probable { border-left-color: var(--warning); background: var(--warning-bg); }
+.link.certainty-uncertain {
+  border-left-color: var(--warning); background: var(--warning-bg);
+  border-left-style: dashed;
+}
+
+.link-who {
+  display: flex; align-items: baseline; gap: .4rem;
+  margin-bottom: .4rem; font-size: .88rem; line-height: 1.3;
+}
+.link-who strong { font-weight: 600; min-width: 0; word-break: break-word; }
+
+.link-gramps {
+  flex: none; font-size: .66rem; color: var(--accent);
+  background: var(--accent-bg); padding: .05rem .3rem; border-radius: 2px;
+}
+
+.link-row { display: flex; gap: .35rem; align-items: center; }
+.link-row select { flex: 1; min-width: 0; font-size: .78rem; padding: .25rem .3rem; }
+.link-row button { flex: none; font-size: .78rem; padding: .3rem .55rem; }
+
+.link-remove {
+  border: none; background: transparent; color: var(--ink-faint);
+  padding: .2rem .35rem; line-height: 1;
+}
+.link-remove:hover { color: var(--accent); }
+
+.link-new { margin-top: .8rem; display: flex; flex-direction: column; gap: .4rem; }
+.link-new input {
+  width: 100%; padding: .4rem .5rem; font: inherit; font-size: .85rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink);
+}
+
+/* The crop being described stands out from the others on the folio. */
+.crop.chosen { border-width: 3px; background: rgba(122, 74, 43, .16); }
+
+/* The whole rectangle opens the entry. It is transparent: what you see is
+   the folio, not the button. */
+.crop-open {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: none; background: transparent; padding: 0; cursor: pointer;
+}
+.crop-open:hover { background: rgba(122, 74, 43, .12); }
+.crop-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* While drawing, the rectangle lets the pointer through: on a crowded folio
+   the entries overlap, and a large crop would make it impossible to draw the
+   next one. Its tag stays active, which is how it is opened and removed. */
+.image-frame.recortando .crop-open { pointer-events: none; }
+
+/* The name opens the entry too, and keeps doing so while drawing: it is the
+   only way to reach a crop whose rectangle lets the pointer through so
+   another can be drawn on top of it. */
+.crop-name {
+  border: none; background: var(--accent); color: var(--surface);
+  font: inherit; font-size: .72rem; font-weight: 500; line-height: 1.2;
+  padding: .3rem .55rem;
+  display: inline-flex; align-items: center; gap: .3rem;
+}
+.crop-name:hover { background: var(--ink); color: var(--surface); }
+.crop-name:focus-visible { outline: 2px solid var(--surface); outline-offset: -3px; }
+
+.crop-people {
+  display: inline-block; padding: 0 .3rem;
+  background: var(--surface); color: var(--accent);
+  border-radius: 8px; font-size: .66rem; font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  /* No room for three columns: the panel floats again, but against the edge
+     and narrow, to cover as little as possible. */
+  .viewer.with-adjustments { grid-template-columns: 1fr var(--sheet-width, 330px); }
+  .adjustments {
+    position: absolute; top: 3.4rem; right: calc(var(--sheet-width, 330px) + 12px); z-index: 5;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 6px 22px rgba(34, 29, 23, .18);
+    max-height: calc(100vh - 5rem);
+  }
+
+  /* The scheme loses the record column: it moves below the tree. */
+  .scheme-two { grid-template-columns: 1fr; }
+  .scheme-record { position: static; max-height: none; }
+}
+
+@media (max-width: 860px) {
+  .viewer-handle { display: none; }
+  .viewer, .viewer.with-adjustments, .viewer.with-entry, .viewer.with-adjustments.with-entry {
+    grid-template-columns: 1fr; grid-template-rows: auto 1fr auto;
+    grid-template-areas: "bar" "canvas" "record";
+  }
+  .viewer-record { max-height: 38vh; border-left: none; border-top: 1px solid var(--line); }
+  .adjustments { right: 12px; top: 3.2rem; width: min(236px, calc(100vw - 24px)); }
+
+  /* With no column of its own, the entry floats over the folio: describing it
+     requires seeing it, so the canvas is left peeking out at the side. */
+  .entry {
+    position: absolute; top: 3.2rem; right: 12px; z-index: 6;
+    width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 5rem);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 6px 22px rgba(34, 29, 23, .18);
+  }
+  .viewer.with-adjustments.with-entry .adjustments { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

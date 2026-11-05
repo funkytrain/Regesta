@@ -1,0 +1,66 @@
+{
+  "id": "en-parish",
+  "name": "English parish registers and civil registration",
+  "language": "en",
+  "filenamePattern": "{type} {name} {year} [{page}]",
+
+  "_note": [
+    "An example profile, not tested against a real archive. English-language",
+    "archives tend to need fewer spelling rules than Spanish ones, because",
+    "the surname variation is carried by the names themselves rather than by",
+    "the orthography: see the Soundex-style equivalences below, which are",
+    "deliberately few. Adjust to your own files."
+  ],
+
+  "yearRange": { "min": 1538, "max": "current" },
+
+  "recordTypes": {
+    "baptism": { "match": ["BAPTISM", "BAPTISMS", "CHRISTENING"] },
+    "birth": { "match": ["BIRTH", "BIRTHS", "BIRTH CERTIFICATE"] },
+    "marriage": { "match": ["MARRIAGE", "MARRIAGES"] },
+    "marriage_licence": { "match": ["MARRIAGE LICENCE", "MARRIAGE LICENSE", "BANNS", "ALLEGATION"] },
+    "burial": { "match": ["BURIAL", "BURIALS", "DEATH", "DEATHS"] },
+    "confirmation": { "match": ["CONFIRMATION", "CONFIRMATIONS"] },
+    "census": { "match": ["CENSUS"] },
+    "index": { "match": ["INDEX", "INDEXES", "INDICES"] },
+    "record": { "match": ["ENTRY", "RECORD", "REGISTER"] }
+  },
+
+  "joiners": ["AND", "TO", "WITH"],
+
+  "userMarks": ["POSSIBLE", "CHECK", "REVIEW", "DOUBTFUL", "UNSURE"],
+
+  "notRecords": [
+    "^FireShot\\s+Capture",
+    "^Screenshot",
+    "^Screen\\s+Shot",
+    "^\\d{1,4}-",
+    "^\\d{1,4}\\.(jpe?g|png|tiff?)$",
+    "^(IMG|DSC|DSCN|P)[-_]?\\d+",
+    "^WhatsApp\\s+Image",
+    "^Scan\\s*\\d+$"
+  ],
+
+  "roles": [
+    "subject",
+    "father",
+    "mother",
+    "godfather",
+    "godmother",
+    "spouse",
+    "witness",
+    "deceased",
+    "celebrant",
+    "informant",
+    "other"
+  ],
+
+  "matchKeyRules": [
+    { "from": "PH", "to": "F", "why": "Stephen / Stefen" },
+    { "from": "\\bKN", "to": "N", "why": "Knight / Night, silent initial K" },
+    { "from": "\\bWR", "to": "R", "why": "Wright / Right, silent initial W" },
+    { "from": "CK", "to": "K", "why": "Dicken / Diken" },
+    { "from": "(?<=[A-Z])E\\b", "to": "", "why": "Clarke / Clark, trailing silent E" },
+    { "from": "Y\\b", "to": "I", "why": "Bailey / Baili, terminal Y as a vowel" }
+  ]
+}

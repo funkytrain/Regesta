@@ -1,0 +1,22 @@
+node_modules/
+dist/
+
+# The database and thumbnails: your cataloguing work, not the program's.
+data/
+!data/.gitkeep
+
+# Profiles you generate for your own archive. The bundled ones are tracked.
+profiles/my-archive.json
+
+*.log
+.env
+
+# Local tooling configuration, not part of the project.
+.claude/
+.agents/
+skills-lock.json
+
+# Data folders from earlier local deployments. They hold the real database
+# and a copy of the Gramps tree: never publish these.
+docker-datos/
+docker-data/

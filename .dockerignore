@@ -1,0 +1,13 @@
+node_modules
+dist
+data
+tests
+.git
+*.log
+.env
+
+# The documentation is not needed inside the image, but profiles/README.md
+# is: it is what explains the profile alongside the profiles themselves.
+README.md
+CONTRIBUTING.md
+docs

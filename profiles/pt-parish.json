@@ -1,0 +1,67 @@
+{
+  "id": "pt-parish",
+  "name": "Portuguese parish registers",
+  "language": "pt",
+  "filenamePattern": "{type} {name} {year} [{page}]",
+
+  "_note": [
+    "An example profile, not tested against a real archive. It is here to",
+    "show which parts of es-parish are specific to Spanish and which are",
+    "structural. Check the spellings and the rules against your own files",
+    "before trusting it."
+  ],
+
+  "yearRange": { "min": 1400, "max": "current" },
+
+  "recordTypes": {
+    "baptism": { "match": ["BAPTISMO", "BAPTISMOS", "BATISMO", "BATISMOS"] },
+    "marriage": { "match": ["CASAMENTO", "CASAMENTOS"] },
+    "burial": { "match": ["OBITO", "OBITOS", "ÓBITO", "ÓBITOS", "ENTERRAMENTO"] },
+    "marriage_licence": { "match": ["PROCESSO MATRIMONIAL", "BANHOS"] },
+    "confirmation": { "match": ["CRISMA", "CRISMAS"] },
+    "index": { "match": ["INDICE", "ÍNDICE", "INDICES", "ÍNDICES"] },
+    "record": { "match": ["ASSENTO", "ASSENTOS"] }
+  },
+
+  "joiners": ["E", "COM"],
+
+  "userMarks": ["POSSIVEL", "POSSÍVEL", "REVER", "DUVIDOSO"],
+
+  "notRecords": [
+    "^FireShot\\s+Capture",
+    "^Screenshot",
+    "^Captura\\s+de\\s+ecr",
+    "^\\d{1,4}-",
+    "^\\d{1,4}\\.(jpe?g|png|tiff?)$",
+    "^(IMG|DSC|DSCN|P)[-_]?\\d+",
+    "^WhatsApp\\s+Image"
+  ],
+
+  "roles": [
+    "subject",
+    "father",
+    "mother",
+    "godfather",
+    "godmother",
+    "paternal_grandfather",
+    "paternal_grandmother",
+    "maternal_grandfather",
+    "maternal_grandmother",
+    "spouse",
+    "witness",
+    "deceased",
+    "celebrant",
+    "informant",
+    "other"
+  ],
+
+  "matchKeyRules": [
+    { "from": "PH", "to": "F", "why": "Josepha -> Josefa" },
+    { "from": "TH", "to": "T", "why": "Catharina -> Catarina" },
+    { "from": "SS", "to": "S", "why": "double s reduced" },
+    { "from": "NH", "to": "N", "why": "Minho / Mino, for matching only" },
+    { "from": "LH", "to": "L", "why": "Carvalho / Carvalo, for matching only" },
+    { "from": "\\bY", "to": "I", "why": "Ysabel -> Isabel" },
+    { "from": "Z", "to": "S", "why": "Fernandez / Fernandes" }
+  ]
+}

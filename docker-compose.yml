@@ -1,0 +1,73 @@
+# Regesta.
+#
+# Copy this file, change the three paths under `volumes` to point at your own
+# folders, and start it. Everything else has a working default.
+#
+# On a Synology NAS: Container Manager -> Project -> upload this file.
+
+services:
+  regesta:
+    build: .
+    image: regesta:latest
+    container_name: regesta
+    restart: unless-stopped
+
+    # The same UID:GID as the user who owns your documents, so the container
+    # has exactly the read access you already have. On a Synology, look it up
+    # with `id your-user` over SSH. Omit this line to run as root, which
+    # works but is worth avoiding.
+    user: "1000:1000"
+
+    ports:
+      # host:container. Change the left-hand number if 8080 is taken.
+      - "8080:8080"
+
+    volumes:
+      # Your documents. The `:ro` suffix mounts them READ-ONLY: that is a
+      # guarantee from Docker itself, not a promise from the application.
+      # Even if Regesta had a bug, the system would stop it writing here.
+      - /path/to/your/archive:/documents:ro
+
+      # The only thing the application writes: its database and thumbnails.
+      # Back this folder up and you have all your cataloguing.
+      - ./data:/data
+
+      # Optional. Your Gramps tree, also READ-ONLY. Regesta copies the
+      # sqlite.db into its own data folder and queries the copy: it never
+      # opens the original, so Gramps can be running at the same time.
+      # Mount the folder holding sqlite.db, and inside the application give
+      # the path as /gramps/sqlite.db
+      # - /path/to/your/gramps/tree:/gramps:ro
+
+      # Optional. Your own archive profiles, if you keep them outside the
+      # image. See profiles/README.md.
+      # - ./profiles:/app/profiles:ro
+
+    environment:
+      TZ: Europe/Madrid
+
+      # The archive profile: the vocabulary of your file names. Bundled ones
+      # are es-parish (the default), en-parish and pt-parish. See
+      # profiles/README.md for writing your own.
+      REGESTA_PROFILE: es-parish
+
+      REGESTA_PORT: "8080"
+      REGESTA_DB: /data/regesta.db
+      REGESTA_THUMBNAILS: /data/thumbnails
+
+      # A full sweep of the folder every 6 hours, on top of continuous watching.
+      # It picks up whatever the file system notifications may miss.
+      REGESTA_SWEEP_MIN: "360"
+
+      # If you copy documents to the server from another machine and they do
+      # not show up on their own, set this to "1": it polls the disk instead
+      # of waiting for notifications, which do not always cross a network
+      # share into the container.
+      REGESTA_POLLING: "0"
+
+      # Set to "0" to turn folder watching off entirely.
+      # REGESTA_WATCH: "1"
+
+    # A modest cap, so that an indexing pass over thousands of images does
+    # not starve the rest of a small home server. Raise it if you have room.
+    mem_limit: 1g

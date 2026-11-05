@@ -1,0 +1,96 @@
+{
+  "id": "es-parish",
+  "name": "Spanish parish registers (16th-20th c.)",
+  "language": "es",
+  "filenamePattern": "{type} {name} {year} [{page}]",
+
+  "yearRange": { "min": 1400, "max": "current" },
+
+  "recordTypes": {
+    "baptism": {
+      "match": ["BAUTISMO", "BAUTISMOS"],
+      "typos": ["BAUTIZO", "BAUUTISMO"]
+    },
+    "marriage_licence": {
+      "match": ["EXPEDIENTE MATRIMONIAL", "EXPEDIENTE MATRIMONIALES"],
+      "typos": ["EXPEDIENTE MATRIMONIOAL", "EXPEDIENTEMATRIMONIAL"]
+    },
+    "marriage": {
+      "match": ["MATRIMONIO", "MATRIMONIOS"]
+    },
+    "burial": {
+      "match": ["DEFUNCION", "DEFUNCIONES", "DEFUNCIÓN"]
+    },
+    "confirmation": {
+      "match": ["CONFIRMACION", "CONFIRMACIONES", "CONFIRMACIÓN"]
+    },
+    "nuptial_blessing": {
+      "match": ["VELACION", "VELACIONES", "VELACIÓN"]
+    },
+    "index": {
+      "match": ["INDICE", "INDICES", "ÍNDICE", "ÍNDICES"]
+    },
+    "record": {
+      "match": ["PARTIDA", "PARTIDAS"]
+    }
+  },
+
+  "joiners": ["Y", "CON", "CONTRA"],
+
+  "userMarks": ["POSIBLE", "ETIQUETAR", "REVISAR", "DUDOSO"],
+
+  "notRecords": [
+    "^FireShot\\s+Capture",
+    "^Captura\\s+de\\s+pantalla",
+    "^Screenshot",
+    "^\\d{1,4}-",
+    "^\\d{1,4}\\.(jpe?g|png|tiff?)$",
+    "^(IMG|DSC|DSCN|P)[-_]?\\d+",
+    "^editum,",
+    "^WhatsApp\\s+Image"
+  ],
+
+  "roles": [
+    "subject",
+    "father",
+    "mother",
+    "godfather",
+    "godmother",
+    "paternal_grandfather",
+    "paternal_grandmother",
+    "maternal_grandfather",
+    "maternal_grandmother",
+    "spouse",
+    "witness",
+    "deceased",
+    "celebrant",
+    "grantor",
+    "informant",
+    "other"
+  ],
+
+  "matchKeyRules": [
+    { "from": "PH", "to": "F", "why": "Josepha -> Josefa" },
+    { "from": "TH", "to": "T", "why": "Catharina -> Catarina" },
+    { "from": "SS", "to": "S", "why": "Pesso -> Peso" },
+    { "from": "\\bLL(?=E)", "to": "L", "why": "Lleonor -> Leonor" },
+    {
+      "from": "\\bY(?=[BCDFGHJKLMNPQRSTVWXZ]|[AEIOU])",
+      "to": "I",
+      "why": "Ysabel -> Isabel. Initial Y acting as a vowel"
+    },
+    { "from": "\\bX(?=I)", "to": "J", "why": "Ximenez -> Jimenez" },
+    {
+      "from": "\\bJU(?=S|Z)",
+      "to": "JO",
+      "why": "Jusepa -> Josepa -> Josefa. Applied after PH so it reaches the end"
+    },
+    { "from": "\\bV(?=[AEIOU])", "to": "B", "why": "Vicent / Bicent, interchangeable initials" },
+    { "from": "Z", "to": "S", "why": "Fernandez -> Fernandes, seseo in the registers" },
+    {
+      "from": "JOSEPA",
+      "to": "JOSEFA",
+      "why": "Both coexist in the same corpus; unified once PH is resolved"
+    }
+  ]
+}

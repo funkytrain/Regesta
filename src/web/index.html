@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regesta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="bar">
+  <a class="brand" href="#" data-go="home">
+    <span class="brand-name">Regesta</span>
+  </a>
+
+  <form class="searchbox" id="form-search" role="search">
+    <input type="search" id="q" name="q"
+           placeholder="Search file names and inside the documents…"
+           title="Put a phrase in quotes to search for it literally inside the documents"
+           autocomplete="off" aria-label="Search documents">
+    <button type="submit">Search</button>
+  </form>
+
+  <nav class="sections">
+    <button id="mobile-panel" class="narrow-only" title="Browser">☰</button>
+    <button data-go="home" class="active">Home</button>
+    <button data-go="classification">Scheme</button>
+    <button data-go="review">Review</button>
+    <button data-go="people">People</button>
+    <button data-go="gaps">What is missing</button>
+    <button data-go="duplicates">Duplicates</button>
+  </nav>
+</header>
+
+<div class="body" id="body">
+  <!-- Browser: the archive by folder, by record type and by tag. -->
+  <aside class="browser" id="browser">
+    <nav class="br-tabs" role="tablist">
+      <button class="active" data-tree="folders" role="tab">Folders</button>
+      <button data-tree="record-types" role="tab">Record types</button>
+      <button data-tree="tags" role="tab">Tags</button>
+      <button id="collapse-panel" class="br-collapse" title="Collapse the browser (E)"
+              aria-label="Collapse the browser">‹</button>
+    </nav>
+    <div class="br-body" id="br-body">
+      <p class="loading">Loading…</p>
+    </div>
+  </aside>
+
+  <!-- Handle to widen or narrow the panel. -->
+  <div id="handle" class="br-handle" role="separator" aria-orientation="vertical"
+       aria-label="Browser width" tabindex="0"></div>
+
+  <!-- With the panel collapsed, this tab brings it back. -->
+  <button id="expand-panel" class="br-expand" title="Show the browser (E)"
+          aria-label="Show the browser">›</button>
+
+  <main id="main">
+    <p class="loading">Loading…</p>
+  </main>
+</div>
+
+<!-- Document viewer. It opens over the page, without losing the search. -->
+<div class="viewer" id="viewer" hidden>
+  <div class="viewer-bar">
+    <button id="viewer-back" class="viewer-back" title="Back to the previous document (Backspace)"
+            aria-label="Back to the previous document" hidden>‹</button>
+    <div class="viewer-title" id="viewer-title"></div>
+    <div class="viewer-actions">
+      <span class="pages-only" id="pdf-pages" hidden></span>
+      <button class="pdf-only" id="pdf-out" title="Zoom out (−)">−</button>
+      <span class="pdf-only" id="pdf-zoom">Fitted</span>
+      <button class="pdf-only" id="pdf-in" title="Zoom in (+)">+</button>
+      <button class="pdf-only" id="pdf-width" title="Fit to width (0)">Width</button>
+      <button class="image-only" id="viewer-out" title="Zoom out (−)">−</button>
+      <span class="image-only" id="viewer-zoom">100 %</span>
+      <button class="image-only" id="viewer-in" title="Zoom in (+)">+</button>
+      <button class="image-only" id="viewer-fit" title="Fit to the window (0)">Fit</button>
+      <button class="image-only" id="viewer-lens" title="Reading: negative and high contrast (L)">Reading</button>
+      <button class="image-only" id="viewer-panel" title="Image adjustments (A)" aria-expanded="false">Adjust</button>
+      <button class="image-only" id="viewer-crop" title="Mark an entry within the folio (M)"
+              aria-pressed="false">Mark entry</button>
+      <button class="text-only" id="viewer-find" title="Find in the document (F)">Find</button>
+      <button id="viewer-close" title="Close (Esc)">✕</button>
+    </div>
+  </div>
+
+  <!-- Search inside the open document. -->
+  <div class="doc-finder" id="doc-finder" hidden>
+    <input type="search" id="df-term" placeholder="Find in this document…"
+           autocomplete="off" aria-label="Find inside the document">
+    <span class="df-count" id="df-count"></span>
+    <button id="df-previous" title="Previous (Shift+Enter)">↑</button>
+    <button id="df-next" title="Next (Enter)">↓</button>
+    <button id="df-close" title="Close (Esc)">✕</button>
+  </div>
+
+  <div class="viewer-canvas" id="viewer-canvas">
+    <div class="image-frame" id="image-frame">
+      <img id="viewer-img" alt="" draggable="false">
+      <!-- Boxes of the entries already marked, and the one being drawn. -->
+      <div class="crop-layer" id="crop-layer"></div>
+    </div>
+  </div>
+
+  <!-- Paginated documents: PDF drawn on a canvas. -->
+  <div class="viewer-pdf" id="viewer-pdf" hidden>
+    <div class="pdf-sheets" id="pdf-sheets"></div>
+  </div>
+
+  <!-- Plain text: transcriptions and notes. -->
+  <div class="viewer-text" id="viewer-text" hidden>
+    <pre id="text-body"></pre>
+  </div>
+
+  <!-- Word documents converted to HTML. -->
+  <div class="viewer-word" id="viewer-word" hidden>
+    <article id="word-body"></article>
+  </div>
+
+  <!-- Formats the browser cannot display. -->
+  <div class="viewer-other" id="viewer-other" hidden>
+    <div class="other-box">
+      <p class="other-icon" id="other-icon">DOC</p>
+      <p id="other-name"></p>
+      <p class="other-note">This format cannot be shown here.</p>
+      <p><a id="other-link" href="#" target="_blank" rel="noopener">Open or download the original</a></p>
+    </div>
+  </div>
+
+  <!-- Reading tools. They act on the image on screen; the original file is
+       never modified. -->
+  <div class="adjustments" id="adjustments" hidden>
+    <div class="adjustments-head">
+      <strong>Image adjustments</strong>
+      <button id="adjustments-close" title="Hide">✕</button>
+    </div>
+
+    <label class="control">
+      <span>Contrast <output id="v-contrast">100 %</output></span>
+      <input type="range" id="c-contrast" min="50" max="300" value="100" step="5">
+    </label>
+    <label class="control">
+      <span>Brightness <output id="v-brightness">100 %</output></span>
+      <input type="range" id="c-brightness" min="30" max="220" value="100" step="5">
+    </label>
+    <label class="control">
+      <span>Saturation <output id="v-saturation">100 %</output></span>
+      <input type="range" id="c-saturation" min="0" max="250" value="100" step="5">
+    </label>
+    <label class="control">
+      <span>Sepia <output id="v-sepia">0 %</output></span>
+      <input type="range" id="c-sepia" min="0" max="100" value="0" step="5">
+    </label>
+    <label class="control">
+      <span>Sharpen <output id="v-sharpen">0</output></span>
+      <input type="range" id="c-sharpen" min="0" max="100" value="0" step="5">
+    </label>
+    <label class="control">
+      <span>Threshold <output id="v-threshold">off</output></span>
+      <input type="range" id="c-threshold" min="0" max="100" value="0" step="5">
+    </label>
+
+    <div class="adjustments-group">
+      <button id="b-negative" aria-pressed="false">Negative</button>
+      <button id="b-greyscale" aria-pressed="false">Greyscale</button>
+    </div>
+    <div class="adjustments-group">
+      <button id="b-rotate-left" title="Rotate 90° anticlockwise">↺</button>
+      <button id="b-rotate-right" title="Rotate 90° clockwise">↻</button>
+      <button id="b-mirror" aria-pressed="false" title="Flip horizontally">⇋</button>
+    </div>
+    <button id="b-reset" class="wide">Reset everything</button>
+
+    <p class="adjustments-note">This only changes what you see. The original file is untouched.</p>
+  </div>
+
+  <!-- Description of one particular entry: its data, who appears in it and in
+       what role. It opens when a box is marked or clicked. -->
+  <div class="entry" id="entry" hidden>
+    <div class="adjustments-head">
+      <strong id="entry-title">Entry</strong>
+      <button id="entry-close" title="Close">✕</button>
+    </div>
+    <div id="entry-body"></div>
+  </div>
+
+  <aside class="viewer-record" id="viewer-record"></aside>
+  <div class="viewer-handle" id="viewer-handle" role="separator" aria-orientation="vertical" tabindex="0"
+       title="Drag to change the width (double click: reset)"></div>
+</div>
+
+<!-- Filters CSS does not provide: convolution sharpening and binary
+     threshold. They live in the document so they can be referenced from the
+     filter property. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="f-sharpen">
+      <feConvolveMatrix id="m-sharpen" order="3" preserveAlpha="true"
+                        kernelMatrix="0 0 0  0 1 0  0 0 0"></feConvolveMatrix>
+    </filter>
+  </defs>
+</svg>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>
